@@ -24,7 +24,7 @@ import os.path
 from uuid import uuid4
 from docopt import docopt
 
-class ChildrenNotCompleted(Exception):
+class DependenciesNotCompleted(Exception):
     pass
 
 class OrphanError(Exception):
@@ -109,8 +109,10 @@ def todo_move(storage, id, pid):
 
 def todo_done(storage, id):
     id = expand_id(storage, id)
+    if any(storage[dep]['status'] != 'closed' for dep in storage[id]['requires']):
+        raise DependenciesNotCompleted
     if any(storage[cid]['status'] != 'closed' for cid in storage[id]['children']):
-        raise ChildrenNotCompleted  # maybe later allow this and mark all children done?
+        raise DependenciesNotCompleted  # maybe later allow this and mark all children done?
     storage[id]['status'] = 'closed'
     print("Marked as done: [{:.8s}] -- {}".format(id, storage[id]['name']))
 
