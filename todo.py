@@ -110,7 +110,7 @@ def todo_done(storage, id):
     if any(storage[cid]['status'] != 'closed' for cid in storage[id]['children']):
         raise ChildrenNotCompleted  # maybe later allow this and mark all children done?
     storage[id]['status'] = 'closed'
-    print("Marked [{:.8s}] -- {} as done".format(id, storage[id]['name']))
+    print("Marked as done: [{:.8s}] -- {}".format(id, storage[id]['name']))
 
 def todo_delete(storage, id):
     id = expand_id(storage, id)
@@ -119,6 +119,12 @@ def todo_delete(storage, id):
     storage[storage[id]['parent']]['children'].remove(id)
     print("Deleted [{:.8s}] -- {}".format(id, storage[id]['name']))
     del storage[id]
+
+def todo(storage):
+    for node in storage:
+        if all(storage[dep]['status'] == 'closed' for dep in storage[node]['requires']):
+            if storage[node]['status'] == 'open':
+                print("[{:.8s}] -- {}".format(node, storage[node]['name']))
 
 
 if __name__ == '__main__':
@@ -140,7 +146,5 @@ if __name__ == '__main__':
     elif args['delete']:
         todo_delete(storage, args['<id>'])
     else:  # no arguments
-        for node in storage:
-            if storage[node]['status'] == 'open' and all(storage[dep]['status'] == 'closed' for dep in storage[node]['requires']):
-                print("[{:.8s}] {}".format(node, storage[node]['name']))
+        todo(storage)
     save_storage(storage)
