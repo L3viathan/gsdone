@@ -1,3 +1,4 @@
+#!/usr/local/bin/python3
 """Simple TodoTracker
 
 Usage:
@@ -82,8 +83,9 @@ def todo_add(storage, name, pid):
 
 def todo_show(storage, pid, level=0):
     for child in storage[pid]['children']:
-        print("  "*level, "[{:.8s}] -- {}".format(child, storage[child]['name']), sep='')
-        todo_show(storage, child, level+1)
+        if storage[child]['status'] != 'closed':
+            print("  "*level, "[{:.8s}] -- {}".format(child, storage[child]['name']), sep='')
+            todo_show(storage, child, level+1)
 
 def todo_set(storage, id, field, value):
     if field not in ('deadline', 'comment',):
