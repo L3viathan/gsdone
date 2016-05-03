@@ -46,7 +46,7 @@ def load_storage():
                         'children': [],
                         'parent': None,
                         'requires': [],  # keep permanently empty
-                        'status': 'completed',
+                        'status': 'closed',
                         'format': 0,
                         }
                   }
@@ -96,7 +96,7 @@ def todo_require(storage, id, other_id):
     dependency = expand_id(storage, other_id)  # just to make sure it exists
     if dependency not in storage[dependent]['requires']:
         storage[dependent]['requires'].append(dependency)
-    print("Added dependency: [{:.8s}] requires [{:.8s}] to be done.")
+    print("Added dependency: [{:.8s}] requires [{:.8s}] to be done.".format(dependent, dependency))
 
 def todo_move(storage, id, pid):
     pid = expand_id(storage, pid)
@@ -107,9 +107,9 @@ def todo_move(storage, id, pid):
 
 def todo_done(storage, id):
     id = expand_id(storage, id)
-    if any(storage[cid]['status'] != 'completed' for cid in storage[id]['children']):
+    if any(storage[cid]['status'] != 'closed' for cid in storage[id]['children']):
         raise ChildrenNotCompleted  # maybe later allow this and mark all children done?
-    storage[id]['status'] = 'completed'
+    storage[id]['status'] = 'closed'
     print("Marked [{:.8s}] -- {} as done".format(id, storage[id]['name']))
 
 def todo_delete(storage, id):
@@ -142,5 +142,5 @@ if __name__ == '__main__':
     else:  # no arguments
         for node in storage:
             if storage[node]['status'] == 'open' and all(storage[dep]['status'] == 'closed' for dep in storage[node]['requires']):
-                print(storage[node]['name'])
+                print("[{:.8s}] {}".format(node, storage[node]['name']))
     save_storage(storage)
