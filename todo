@@ -24,6 +24,7 @@ import json
 import os.path
 from uuid import uuid4
 from docopt import docopt
+from itertools import chain
 
 class DependenciesNotCompleted(Exception):
     pass
@@ -67,19 +68,17 @@ def expand_id(storage, id):
     raise ItemNotFound(id)
 
 def todo_add(storage, name, pid):
-    if pid is None:
-        pid = "HEAD"
     uuid = uuid4().hex
-    pid = expand_id(storage, pid)
-    storage[pid]['children'].append(uuid)
     storage[uuid] = {
                    'name': name,
                    'id': uuid,
-                   'parent': pid,
+                   'parent': 'HEAD',
                    'children': [],
                    'requires': [],
                    'status': 'open',
                   }
+    if pid is not None:
+        todo_move(storage, uuid, pid)
     return uuid
 
 def todo_show(storage, pid, level=0, show_all=False):
@@ -133,7 +132,7 @@ def todo_clean(storage, start='HEAD'):
 
 def todo(storage):
     for node in storage:
-        if all(storage[dep]['status'] == 'closed' for dep in storage[node]['requires']):
+        if all(storage[dep]['status'] == 'closed' for dep in chain(storage[node]['requires'], storage[node]['children'])):
             if storage[node]['status'] == 'open':
                 print("[{:.8s}] -- {}".format(node, storage[node]['name']))
 
