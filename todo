@@ -9,7 +9,8 @@ Usage:
     todo.py move <id> <pid>
     todo.py done <id>
     todo.py delete <id>
-    todo.py show
+    todo.py clean
+    todo.py show [--all | -a]
     todo.py (-h | --help)
     todo.py --version
 
@@ -17,7 +18,7 @@ Options:
     --parent=<pid>  Parent to attach to [default: HEAD].
     --version       Show version.
     -h --help       Show this screen.
-
+    -a --all        Show all items
 """
 import json
 import os.path
@@ -81,11 +82,11 @@ def todo_add(storage, name, pid):
                   }
     return uuid
 
-def todo_show(storage, pid, level=0):
+def todo_show(storage, pid, level=0, show_all=False):
     for child in storage[pid]['children']:
-        if storage[child]['status'] != 'closed':
+        if storage[child]['status'] != 'closed' or show_all:
             print("  "*level, "[{:.8s}] -- {}".format(child, storage[child]['name']), sep='')
-            todo_show(storage, child, level+1)
+            todo_show(storage, child, level+1, show_all)
 
 def todo_set(storage, id, field, value):
     if field not in ('deadline', 'comment',):
@@ -124,6 +125,12 @@ def todo_delete(storage, id):
     print("Deleted [{:.8s}] -- {}".format(id, storage[id]['name']))
     del storage[id]
 
+def todo_clean(storage, start='HEAD'):
+    for cid in storage[start]['children']:
+        if storage[cid]['status'] == 'closed':
+            todo_clean(storage, cid)
+            todo_delete(storage, cid)
+
 def todo(storage):
     for node in storage:
         if all(storage[dep]['status'] == 'closed' for dep in storage[node]['requires']):
@@ -132,13 +139,13 @@ def todo(storage):
 
 
 if __name__ == '__main__':
-    args = docopt(__doc__, version="0.1.0")
+    args = docopt(__doc__, version="0.2.0")
     storage = load_storage()
     if args['add']:
         id = todo_add(storage, args['<name>'], args['--parent'])
         print("Added [{:.8s}] -- {}".format(id, storage[id]['name']))
     elif args['show']:
-        todo_show(storage, 'HEAD')
+        todo_show(storage, 'HEAD', show_all=args['--all'])
     elif args['set']:
         todo_set(storage, args['<id>'], args['<field>'], args['<value>'])
     elif args['require']:
@@ -149,6 +156,8 @@ if __name__ == '__main__':
         todo_done(storage, args['<id>'])
     elif args['delete']:
         todo_delete(storage, args['<id>'])
+    elif args['clean']:
+        todo_clean(storage)
     else:  # no arguments
         todo(storage)
     save_storage(storage)
