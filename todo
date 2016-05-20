@@ -77,7 +77,8 @@ def todo_add(storage, name, pid):
                    'requires': [],
                    'status': 'open',
                   }
-    if pid is not None:
+    storage['HEAD']['children'].append(uuid)
+    if pid != 'HEAD':
         todo_move(storage, uuid, pid)
     return uuid
 
